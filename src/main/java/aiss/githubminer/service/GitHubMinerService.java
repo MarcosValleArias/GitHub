@@ -69,7 +69,13 @@ public class GitHubMinerService {
     }
 
     private UserGIT getUser(User user) {
-        return null;
+        UserGIT userObtained = new UserGIT();
+        userObtained.setId(String.valueOf(user.getId()));
+        userObtained.setUsername(user.getLogin());
+        userObtained.setName(user.getLogin());
+        userObtained.setAvatarUrl(user.getAvatarUrl());
+        userObtained.setWebUrl(user.getHtmlUrl());
+        return userObtained;
     }
 
     private List<CommitGIT> getCommits(String owner, String repo) {
