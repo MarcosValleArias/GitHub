@@ -31,8 +31,7 @@ public class CommitGIT {
     private String authoredDate;
 
     @JsonProperty("web_url")
-    @NotEmpty(message = "URL cannot be empty." +
-            "")
+    @NotEmpty(message = "URL cannot be empty." + "")
     private String webUrl;
 
     public String getId() {

@@ -1,5 +1,7 @@
 package aiss.githubminer.service;
 
+import aiss.githubminer.model.Comments.Comment;
+import aiss.githubminer.model.Commit.Commit;
 import aiss.githubminer.model.GitClasses.*;
 import aiss.githubminer.model.Issue.Issue;
 import aiss.githubminer.model.Issue.Label;
@@ -8,7 +10,6 @@ import aiss.githubminer.model.Project.Project;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -54,8 +55,8 @@ public class GitHubMinerService {
                     labels.add((String.valueOf(label.getUrl())));
                 }
                 issueObtained.setLabels(labels);
-                issueObtained.setAuthor(getUser(issue.getUser()));
-                issueObtained.setAssignee(getUser(issue.getAssignee()));
+                issueObtained.setAuthor(getUserIssue(issue.getUser()));
+                issueObtained.setAssignee(getUserIssue(issue.getAssignee()));
                 issueObtained.setVotes(issue.getReactions().getUp() - issue.getReactions().getDown());
                 issueObtained.setComments(getComments(issue.getCommentsUrl()));
                 issueList.add(issueObtained);
@@ -65,10 +66,21 @@ public class GitHubMinerService {
     }
 
     private List<CommentGIT> getComments(String commentsUrl) {
-        return null;
+        List<CommentGIT> commentList = new ArrayList<>();
+        Comment[] CommentArray = restTemplate.getForObject(commentsUrl, Comment[].class);
+        for (Comment comment : CommentArray){
+            CommentGIT obtainedComment = new CommentGIT();
+            obtainedComment.setId(String.valueOf(comment.getId()));
+            obtainedComment.setBody(comment.getBody());
+            obtainedComment.setAuthor(getUserComment(comment.getUser()));
+            obtainedComment.setCreatedAt(comment.getCreatedAt());
+            obtainedComment.setUpdatedAt(comment.getUpdatedAt());
+            commentList.add(obtainedComment);
+        }
+        return commentList;
     }
 
-    private UserGIT getUser(User user) {
+    private UserGIT getUserComment(aiss.githubminer.model.Comments.User user) {
         UserGIT userObtained = new UserGIT();
         userObtained.setId(String.valueOf(user.getId()));
         userObtained.setUsername(user.getLogin());
@@ -78,7 +90,35 @@ public class GitHubMinerService {
         return userObtained;
     }
 
-    private List<CommitGIT> getCommits(String owner, String repo) {
-        return null;
+    private UserGIT getUserIssue(User user) {
+        UserGIT userObtained = new UserGIT();
+        userObtained.setId(String.valueOf(user.getId()));
+        userObtained.setUsername(user.getLogin());
+        userObtained.setName(user.getLogin());
+        userObtained.setAvatarUrl(user.getAvatarUrl());
+        userObtained.setWebUrl(user.getHtmlUrl());
+        return userObtained;
+    }
+
+    public List<CommitGIT> getCommits(String owner, String repo) {
+        String baseUri = "https://api.github.com/repos/";
+        String uri = baseUri + owner + "/" + repo + "/commits";
+        List<CommitGIT> commitList = new ArrayList<>();
+
+        Commit[] commitArray = restTemplate.getForObject(uri, Commit[].class);
+        if (commitArray != null) {
+            for (Commit commit : commitArray) {
+                CommitGIT commitObtained = new CommitGIT();
+                commitObtained.setId(commit.getNodeId());
+                commitObtained.setTitle(commit.getCommit().getMessage());
+                commitObtained.setMessage(commit.getCommit().getMessage());
+                commitObtained.setAuthorName(commit.getCommit().getAuthor().getName());
+                commitObtained.setAuthorEmail(commit.getCommit().getAuthor().getEmail());
+                commitObtained.setAuthoredDate(commit.getCommit().getAuthor().getDate());
+                commitObtained.setWebUrl(commit.getHtmlUrl());
+                commitList.add(commitObtained);
+            }
+        }
+        return commitList;
     }
 }
