@@ -14,6 +14,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,7 +25,7 @@ public class GitHubMinerService {
     @Autowired
     RestTemplate restTemplate;
 
-    public ProjectGIT getProjectData(String owner, String repo, int sinceIssues, int maxPages) {
+    public ProjectGIT getProjectData(String owner, String repo, int sinceIssues, int sinceCommits, int maxPages) {
         String baseUri = "https://api.github.com/repos/";
         String uri = baseUri + owner + "/" + repo;
         Project project = restTemplate.getForObject(uri, Project.class);
@@ -34,7 +35,7 @@ public class GitHubMinerService {
         projectGIT.setName(project.getName());
         projectGIT.setWebUrl(project.getHtmlUrl());
 
-        List<CommitGIT> commits = getCommits(owner, repo, maxPages);
+        List<CommitGIT> commits = getCommits(owner, repo, sinceCommits, maxPages);
         List<IssueGIT> issues = getIssues(owner, repo, sinceIssues, maxPages);
 
         projectGIT.setCommits(commits);
@@ -135,14 +136,16 @@ public class GitHubMinerService {
         return userObtained;
     }
 
-    public List<CommitGIT> getCommits(String owner, String repo, int maxPages) {
+    public List<CommitGIT> getCommits(String owner, String repo, int sinceCommits, int maxPages) {
+        LocalDateTime sinceDate = LocalDateTime.now().minusDays(sinceCommits);
+        String since = sinceDate.format(DateTimeFormatter.ISO_DATE_TIME) + "Z";
         List<CommitGIT> commitList = new ArrayList<>();
         String baseUri = "https://api.github.com/repos/" + owner + "/" + repo + "/commits";
         int page = 1;
         int perPage = 30;
 
         while (page <= maxPages) {
-            String pagedUri = baseUri + "?page=" + page + "&per_page=" + perPage;
+            String pagedUri = baseUri + "?since=" + since + "&page=" + page + "&per_page=" + perPage;
             Commit[] commitArray = restTemplate.getForObject(pagedUri, Commit[].class);
             if (commitArray == null || commitArray.length == 0) break;
 

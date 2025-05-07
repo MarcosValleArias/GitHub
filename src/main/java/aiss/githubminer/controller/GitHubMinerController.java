@@ -25,15 +25,18 @@ public class GitHubMinerController {
             @PathVariable String owner,
             @PathVariable String repo,
             @RequestParam(defaultValue = "20") int sinceIssues,
+            @RequestParam(defaultValue = "2") int sinceCommits,
             @RequestParam(defaultValue = "2") int maxPages) {
-        return gitHubMinerService.getProjectData(owner, repo, sinceIssues, maxPages);
+        return gitHubMinerService.getProjectData(owner, repo, sinceIssues, sinceCommits, maxPages);
     }
+
 
     @GetMapping("/projects/{owner}/{repo}/commits")
     public List<CommitGIT> getCommits(@PathVariable String owner,
                                       @PathVariable String repo,
+                                      @RequestParam(defaultValue = "2") int sinceCommits,
                                       @RequestParam(defaultValue = "2") int maxPages) {
-        return gitHubMinerService.getCommits(owner, repo, maxPages);
+        return gitHubMinerService.getCommits(owner, repo, sinceCommits, maxPages);
     }
 
     @GetMapping("/projects/{owner}/{repo}/issues")
