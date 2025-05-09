@@ -8,8 +8,10 @@ import aiss.githubminer.model.Issue.Label;
 import aiss.githubminer.model.Issue.User;
 import aiss.githubminer.model.Project.Project;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.stereotype.Service;
 
@@ -25,10 +27,25 @@ public class GitHubMinerService {
     @Autowired
     RestTemplate restTemplate;
 
+    // Inject the GitHub token here
+    @Value("${TOKEN}")
+    private String githubToken;
+
+    private HttpHeaders createHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "token " + githubToken);
+        return headers;
+    }
+
+    private HttpEntity<String> createEntity() {
+        return new HttpEntity<>(createHeaders());
+    }
+
     public ProjectGIT getProjectData(String owner, String repo, int sinceIssues, int sinceCommits, int maxPages) {
         String baseUri = "https://api.github.com/repos/";
         String uri = baseUri + owner + "/" + repo;
-        Project project = restTemplate.getForObject(uri, Project.class);
+
+        Project project = restTemplate.exchange(uri, HttpMethod.GET, createEntity(), Project.class).getBody();
 
         ProjectGIT projectGIT = new ProjectGIT();
         projectGIT.setId(String.valueOf(project.getId()));
@@ -56,7 +73,8 @@ public class GitHubMinerService {
 
         while (page <= maxPages) {
             String pagedUri = baseUri + "&page=" + page + "&per_page=" + perPage;
-            Issue[] issuesArray = restTemplate.getForObject(pagedUri, Issue[].class);
+
+            Issue[] issuesArray = restTemplate.exchange(pagedUri, HttpMethod.GET, createEntity(), Issue[].class).getBody();
 
             if (issuesArray == null || issuesArray.length == 0) break;
 
@@ -103,7 +121,7 @@ public class GitHubMinerService {
 
     private List<CommentGIT> getComments(String commentsUrl) {
         List<CommentGIT> commentList = new ArrayList<>();
-        Comment[] CommentArray = restTemplate.getForObject(commentsUrl, Comment[].class);
+        Comment[] CommentArray = restTemplate.exchange(commentsUrl, HttpMethod.GET, createEntity(), Comment[].class).getBody();
         for (Comment comment : CommentArray){
             CommentGIT obtainedComment = new CommentGIT();
             obtainedComment.setId(String.valueOf(comment.getId()));
@@ -146,7 +164,9 @@ public class GitHubMinerService {
 
         while (page <= maxPages) {
             String pagedUri = baseUri + "?since=" + since + "&page=" + page + "&per_page=" + perPage;
-            Commit[] commitArray = restTemplate.getForObject(pagedUri, Commit[].class);
+
+            // Use the HttpEntity with the headers for authenticated requests
+            Commit[] commitArray = restTemplate.exchange(pagedUri, HttpMethod.GET, createEntity(), Commit[].class).getBody();
             if (commitArray == null || commitArray.length == 0) break;
 
             for (Commit commit : commitArray) {
