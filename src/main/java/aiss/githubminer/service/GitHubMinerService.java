@@ -27,7 +27,7 @@ public class GitHubMinerService {
     @Autowired
     RestTemplate restTemplate;
 
-    // Inject the GitHub token here
+    // Put the GitHub token here
     @Value("${TOKEN}")
     private String githubToken;
 
